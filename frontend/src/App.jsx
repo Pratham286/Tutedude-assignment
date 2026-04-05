@@ -3,6 +3,7 @@ import "./App.css";
 import socket from "./services/socket.js";
 import { useGame } from "./context/GameContext.jsx";
 import JoinScreen from "./components/Screen/JoinScreen.jsx";
+import GameCanvas from "./components/Canvas/GameCanvas.jsx";
 
 function App() {
   useEffect(() => {
@@ -23,9 +24,7 @@ function App() {
     if (!joined) return <JoinScreen />;
 
     return (
-        <div className="h-screen w-screen flex items-center justify-center" style={{ backgroundColor: "#071222", color: "#ffffff" }}>
-            <h1 className="text-2xl">Welcome to the Cosmos! (Canvas coming next)</h1>
-        </div>
+        <GameCanvas />
     );
 }
 

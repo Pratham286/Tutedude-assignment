@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useGame } from "../../context/GameContext.jsx";
-import socket from "../../services/socket.js";
 
 const JoinScreen = () => {
     const [input, setInput] = useState("");
@@ -12,7 +11,6 @@ const JoinScreen = () => {
 
         setUsername(trimmed);
         setJoined(true);
-        socket.emit("user:join", { username: trimmed });
     };
 
     const handleKeyDown = (e) => {
@@ -34,7 +32,7 @@ const JoinScreen = () => {
                     placeholder="Your name..."
                     maxLength={15}
                     className="w-full px-4 py-2 rounded-lg outline-none focus:ring-2 placeholder-gray-500"
-                    style={{ backgroundColor: "#071222", color: "#ffffff", focusRingColor: "#38bdf8" }}
+                    style={{ backgroundColor: "#071222", color: "#ffffff" }}
                 />
                 <button
                     onClick={handleJoin}

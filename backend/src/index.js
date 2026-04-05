@@ -3,6 +3,7 @@ import { connectDB } from "./db/connection.js";
 import app from "./app.js";
 import http from "http";
 import { Server } from "socket.io";
+import { setupSocket } from "./socket/handler.js";
 
 const PORT = process.env.PORT || 3000;
 
@@ -17,12 +18,14 @@ const io = new Server(server, {
   },
 });
 
-io.on("connection", (socket) => {
-  console.log("User connected: ", socket.id);
-  socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
-  });
-});
+setupSocket(io);
+
+// io.on("connection", (socket) => {
+//   console.log("User connected: ", socket.id);
+//   socket.on("disconnect", () => {
+//     console.log("User disconnected:", socket.id);
+//   });
+// });
 
 const startServer = async () => {
   try {
