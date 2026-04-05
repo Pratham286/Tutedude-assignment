@@ -16,7 +16,7 @@ const GameCanvas = () => {
   const hasJoinedRef = useRef(false);
   const connectedIdsRef = useRef(new Set());
   const lastEmitRef = useRef(0);
-  const { username } = useGame();
+  const { username, setJoined, setUsername } = useGame();
 
   const [activeChats, setActiveChats] = useState([]);
   const [minimizedChats, setMinimizedChats] = useState(new Set());
@@ -35,12 +35,12 @@ const GameCanvas = () => {
       const app = new Application();
 
       await app.init({
-        width: window.innerWidth,
-        height: window.innerHeight,
-        backgroundColor: 0x071222,
-        resizeTo: window,
-        antialias: true,
-      });
+    width: window.innerWidth,
+    height: window.innerHeight,
+    backgroundColor: 0xf0f4f8,
+    resizeTo: window,
+    antialias: true,
+});
 
       if (!canvasRef.current) {
         app.destroy(true);
@@ -59,7 +59,7 @@ const GameCanvas = () => {
       socket.on("user:joined", ({ user, users }) => {
         if (playerRef.current) return;
 
-        const player = createAvatar(user.username, 0x38bdf8);
+        const player = createAvatar(user.username, 0x1e40af);
         player.x = user.x;
         player.y = user.y;
         playerRef.current = player;
@@ -67,7 +67,7 @@ const GameCanvas = () => {
 
         users.forEach((u) => {
           if (u.id !== socket.id && !playersRef.current.has(u.id)) {
-            const other = createAvatar(u.username, 0x94a3b8);
+            const other = createAvatar(u.username, 0x4338ca);
             other.x = u.x;
             other.y = u.y;
             playersRef.current.set(u.id, other);
@@ -80,7 +80,7 @@ const GameCanvas = () => {
 
       socket.on("user:new", (user) => {
         if (playersRef.current.has(user.id)) return;
-        const other = createAvatar(user.username, 0x94a3b8);
+        const other = createAvatar(user.username, 0x4338ca);
         other.x = user.x;
         other.y = user.y;
         playersRef.current.set(user.id, other);
@@ -266,26 +266,28 @@ const GameCanvas = () => {
     });
   };
 
+  const handleLeave = () => {
+    socket.disconnect();
+    socket.connect();
+    setJoined(false);
+    setUsername("");
+};
+
   return (
     <div className="relative w-screen h-screen overflow-hidden">
       <div ref={canvasRef} className="w-full h-full" />
-      <Navbar
-        username={username}
-        onlineCount={onlineCount}
-        position={position}
-      />
+      <Navbar username={username} onlineCount={onlineCount} position={position} onLeave={handleLeave} />
       {/* Chat panels - positioned bottom right */}
-      <div className="fixed bottom-4 right-4 flex flex-row-reverse gap-3 z-50">
+      <div className="fixed bottom-4 right-4 flex flex-row-reverse items-end gap-3 z-50">
         {activeChats.map((chat) =>
           minimizedChats.has(chat.roomId) ? (
             <button
-              key={chat.roomId}
-              onClick={() => handleMinimize(chat.roomId)}
-              className="px-4 py-2 rounded-full text-sm font-semibold shadow-lg"
-              style={{ backgroundColor: "#38bdf8", color: "#071222" }}
-            >
-              {chat.otherUser}
-            </button>
+    key={chat.roomId}
+    onClick={() => handleMinimize(chat.roomId)}
+    className="px-4 py-2 rounded-full text-sm font-semibold shadow-md bg-gray-800 text-white hover:bg-gray-900"
+>
+    {chat.otherUser}
+</button>
           ) : (
             <ChatPanel
               key={chat.roomId}
@@ -300,79 +302,102 @@ const GameCanvas = () => {
 
       {/* Connection indicator - top right */}
       {activeChats.length > 0 && (
-        <div
-          className="fixed top-4 right-4 flex items-center gap-2 px-3 py-2 rounded-lg z-50"
-          style={{ backgroundColor: "#0f2035" }}
-        >
-          <div className="w-2 h-2 rounded-full bg-green-400"></div>
-          <span className="text-xs" style={{ color: "#94a3b8" }}>
+    <div className="fixed top-14 right-4 flex items-center gap-2 px-3 py-1 rounded-full z-50 bg-blue-500/15 backdrop-blur-sm">
+        <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></div>
+        <span className="text-xs font-semibold text-blue-400">
             {activeChats.length} active{" "}
             {activeChats.length === 1 ? "connection" : "connections"}
-          </span>
-        </div>
-      )}
+        </span>
+    </div>
+)}
     </div>
   );
 };
 
 const createAvatar = (name, color) => {
-  const container = new Container();
+    const container = new Container();
 
-  const glow = new Graphics()
-    .circle(0, 0, 40)
-    .stroke({ width: 3, color: 0x38bdf8, alpha: 0.5 });
-  glow.visible = false;
-  glow.label = "glow";
-  container.addChild(glow);
+    // Proximity glow ring - hidden by default
+    const glow = new Graphics()
+        .circle(0, 0, 40)
+        .stroke({ width: 3, color: 0x3b82f6, alpha: 0.3 });
+    glow.visible = false;
+    glow.label = "glow";
+    container.addChild(glow);
 
-  const ring = new Graphics()
-    .circle(0, 0, 26)
-    .stroke({ width: 2, color: color, alpha: 0.4 });
-  container.addChild(ring);
+    // Shadow
+    const shadow = new Graphics()
+        .circle(0, 4, 22)
+        .fill({ color: 0x000000, alpha: 0.08 });
+    container.addChild(shadow);
 
-  const body = new Graphics().circle(0, 0, 22).fill({ color: color });
-  container.addChild(body);
+    // White filled circle
+    const body = new Graphics()
+        .circle(0, 0, 22)
+        .fill({ color: 0xffffff });
+    container.addChild(body);
 
-  const label = new Text({
-    text: name,
-    style: {
-      fontSize: 13,
-      fill: 0xffffff,
-      fontFamily: "Arial",
-      fontWeight: "bold",
-    },
-  });
-  label.anchor.set(0.5);
-  label.y = -38;
-  container.addChild(label);
+    // Colored border
+    const border = new Graphics()
+        .circle(0, 0, 22)
+        .stroke({ width: 3, color: color });
+    container.addChild(border);
 
-  return container;
+    // First letter inside the circle
+    const initial = new Text({
+        text: name.charAt(0).toUpperCase(),
+        style: {
+            fontSize: 18,
+            fill: color,
+            fontFamily: "Arial",
+            fontWeight: "bold",
+        },
+    });
+    initial.anchor.set(0.5);
+    initial.y = 0;
+    container.addChild(initial);
+
+    // Username label below avatar
+    const label = new Text({
+        text: name,
+        style: {
+            fontSize: 12,
+            fill: 0x475569,
+            fontFamily: "Arial",
+            fontWeight: "bold",
+        },
+    });
+    label.anchor.set(0.5);
+    label.y = 32;
+    container.addChild(label);
+
+    return container;
 };
 
 const drawGrid = (world) => {
-  const bg = new Graphics()
-    .rect(0, 0, MAP_WIDTH, MAP_HEIGHT)
-    .fill({ color: 0x060f1a });
-  world.addChild(bg);
+    const bg = new Graphics()
+        .rect(0, 0, MAP_WIDTH, MAP_HEIGHT)
+        .fill({ color: 0xf8fafc });
+    world.addChild(bg);
 
-  const spacing = 80;
-  const lines = new Graphics();
+    const spacing = 80;
+    const lines = new Graphics();
 
-  for (let x = 0; x <= MAP_WIDTH; x += spacing) {
-    lines.moveTo(x, 0);
-    lines.lineTo(x, MAP_HEIGHT);
-  }
-  for (let y = 0; y <= MAP_HEIGHT; y += spacing) {
-    lines.moveTo(0, y);
-    lines.lineTo(MAP_WIDTH, y);
-  }
-  lines.stroke({ width: 1, color: 0x0f2035, alpha: 0.6 });
-  world.addChild(lines);
+    for (let x = 0; x <= MAP_WIDTH; x += spacing) {
+        lines.moveTo(x, 0);
+        lines.lineTo(x, MAP_HEIGHT);
+    }
+    for (let y = 0; y <= MAP_HEIGHT; y += spacing) {
+        lines.moveTo(0, y);
+        lines.lineTo(MAP_WIDTH, y);
+    }
+    lines.stroke({ width: 1, color: 0x0f172a, alpha: 0.2 });
+    world.addChild(lines);
 
-  const border = new Graphics()
-    .rect(0, 0, MAP_WIDTH, MAP_HEIGHT)
-    .stroke({ width: 2, color: 0x1e3a5f, alpha: 0.5 });
-  world.addChild(border);
+    const border = new Graphics()
+        .rect(0, 0, MAP_WIDTH, MAP_HEIGHT)
+        .stroke({ width: 2, color: 0x0f172a, alpha: 0.15 });
+    world.addChild(border);
 };
 
 export default GameCanvas;

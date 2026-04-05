@@ -78,9 +78,9 @@ export const setupSocket = (io) => {
                         ],
                     });
                 } else if (!isClose && isConnected) {
-                    socket.leave(roomId);
                     const otherSocket = io.sockets.sockets.get(otherId);
                     if (otherSocket) otherSocket.leave(roomId);
+                    socket.leave(roomId);
 
                     activeConnections.delete(roomId);
 

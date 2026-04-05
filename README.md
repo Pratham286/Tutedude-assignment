@@ -5,7 +5,7 @@ A 2D virtual environment where users can move around and interact with each othe
 ## Tech Stack
 
 - **Frontend:** React (Vite), PixiJS, Tailwind CSS, Socket.IO Client
-- **Backend:** Node.js, Express, Socket.IO, MongoDB (Mongoose)
+- **Backend:** Node.js, Express, Socket.IO, MongoDB
 
 ## Features
 
@@ -78,41 +78,13 @@ Go to `http://localhost:5173` in your browser. Open multiple tabs to test multip
 7. If they move apart — the chat room is closed and the panel disappears
 8. All user sessions are persisted in MongoDB
 
-## Project Structure
 
-```
-virtual-cosmos/
-├── backend/
-│   └── src/
-│       ├── index.js              # Entry point — Express + Socket.IO + HTTP server
-│       ├── app.js                # Express app config (CORS, middleware)
-│       ├── db/
-│       │   └── connection.js     # MongoDB connection
-│       ├── models/
-│       │   └── user.model.js     # User schema (username, position, status)
-│       ├── socket/
-│       │   ├── handler.js        # Socket event handlers (join, move, chat)
-│       │   └── proximity.js      # Distance calculation + room ID generation
-│       └── utils/
-│           └── constants.js      # Map size, proximity radius
-├── frontend/
-│   └── src/
-│       ├── App.jsx               # Main app — routes between JoinScreen and Canvas
-│       ├── main.jsx              # Entry point with GameProvider
-│       ├── services/
-│       │   └── socket.js         # Socket.IO client connection
-│       ├── context/
-│       │   └── GameContext.jsx    # Global state (username, joined status)
-│       ├── components/
-│       │   ├── Canvas/
-│       │   │   └── GameCanvas.jsx # PixiJS canvas, movement, game loop
-│       │   ├── Chat/
-│       │   │   └── ChatPanel.jsx  # Chat UI (messages, input)
-│       │   ├── Screen/
-│       │   │   └── JoinScreen.jsx # Username entry screen
-│       │   └── UI/
-│       │       └── Navbar.jsx     # Top bar (name, online count, coords)
-│       └── utils/
-│           └── constants.js      # Map size, speed, radius
-└── README.md
-```
+## Optimisations
+
+1. **Movement Throttling** — Position updates are emitted to the server every 50ms instead of every frame, reducing network traffic by 66% while keeping local movement smooth at 60fps.
+
+2. **useRef Over useState for Game Data** — All real-time game data (player positions, key presses, connected users) is stored in React refs instead of state. This prevents unnecessary re-renders that would otherwise fire 60 times per second.
+
+3. **In-Memory Storage for Real-Time Data** — Active user positions and connections are stored in a server-side JavaScript Map for instant reads/writes. MongoDB is only used for persistent data (user profiles on join/disconnect), avoiding expensive database calls on every movement.
+
+4. **Broadcast Over Emit** — Position updates use `socket.broadcast.emit` instead of `io.emit`, ensuring the server never sends a user their own position data back, reducing unnecessary messages by one per update.
